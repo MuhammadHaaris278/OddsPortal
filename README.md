@@ -1,22 +1,38 @@
-# HQ OddsPortal Scraper
+# 🏟️ HQ OddsPortal Scraper
 
-A custom Python-based headless scraping solution for extracting betting odds from OddsPortal.com. 
+## 📌 Overview
+Brief description of the project, purpose, and goals.
 
-## Features
-- Supports NBA, WNBA, MLB, NHL, NFL, College Football, and Tier 1/2 Soccer
-- Extracts: Moneyline, Draw No Bet, Double Chance, Spreads
-- Filters matches starting in next 24 hours
-- Handles dynamic JavaScript content
-- Stealth mode: proxy rotation, fake headers, randomized delays
-- Exports to both CSV and JSON
+## 🚀 Features
+- Supported Sports
+- Betting Markets Extracted
+- Data Filtering (Next 24 Hours)
+- Stealth Scraping Capabilities
+- Export Formats
 
-## Tech Stack
-- Python 3.10+
-- Playwright
-- pandas
-- httpx
-- cron (optional for Mac automation)
+## 🧱 Tech Stack
+List of tools and libraries used.
 
-## Run Instructions
-```bash
-bash run.sh
+## 🛠️ Installation
+Step-by-step setup instructions:
+- Clone repo
+- Create virtual environment
+- Install dependencies
+- Install Playwright browser
+
+## ▶️ Run Instructions
+How to run the script using `run.sh`, and what it does.
+
+## 🔒 Anti-Detection Techniques
+Explain stealth mechanisms: headers, proxies, delays.
+
+## 📦 Output Format
+Show sample table structure for CSV/JSON export.
+
+
+## 👨‍💻 Authors
+
+List of contributors with roles and links:
+- **Muhammad Haaris** — Developer
+- **Muhammad Bilal** — Developer 
+
