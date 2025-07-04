@@ -1,53 +1,48 @@
 # core/fetch_matches.py
 
-from playwright.sync_api import sync_playwright
+import pandas as pd
 from core.utils import get_logger
-import time
 
 log = get_logger()
 
+
 def fetch_matches(proxy=None, user_agent=None) -> list[dict]:
     matches = []
-    url = "https://www.oddsportal.com/football/lithuania/a-lyga/zalgiris-banga-hQke26Bj/inplay-odds/"
+    url = "https://www.oddsportal.com/matches/football/20250706/"  # The specific match URL
 
-    with sync_playwright() as p:
-        browser = p.firefox.launch(headless=True)
-        context = browser.new_context(user_agent=user_agent)
-        page = context.new_page()
+    try:
+        # Specify the full path to the CSV file
+        # Full path to CSV file
+        df = pd.read_csv(
+            'C:/Users/muham/OneDrive/Desktop/New folder/OddsPortal-scraper/oddsportal.csv')
 
-        try:
-            log.info(f"[*] Visiting match odds page: {url}")
-            page.goto(url, timeout=60000)
+        # Extract relevant columns
+        for index, row in df.iterrows():
+            try:
+                # Extract team names
+                team1 = row['participant-name']
+                team2 = row['participant-name 2']
 
-            # Force wait for content to load
-            time.sleep(5)
+                # Extract odds (adjust this logic as necessary based on your CSV)
+                odds = [
+                    row.get('height-content', 'N/A'),
+                    row.get('height-content 2', 'N/A'),
+                    row.get('height-content 3', 'N/A')
+                ]
 
-            # Try extracting team names from the H1
-            title = page.locator("h1").first.inner_text().strip()
-            if " - " not in title:
-                raise Exception("Match title not in expected format.")
-            team1, team2 = [x.strip() for x in title.split(" - ")]
+                # If the match data is available, add it to the matches list
+                matches.append({
+                    "team1": team1,
+                    "team2": team2,
+                    "odds": odds,
+                    "match_url": url
+                })
 
-            # Now get odds — change selector if needed
-            odds_elements = page.locator("[data-odd-name]")
-            count = odds_elements.count()
-            odds = []
+            except Exception as e:
+                log.warning(f"Skipping match due to error: {e}")
 
-            for i in range(count):
-                text = odds_elements.nth(i).inner_text().strip()
-                if text:
-                    odds.append(text)
+    except Exception as e:
+        log.error(f"Error reading CSV: {e}")
 
-            matches.append({
-                "team1": team1,
-                "team2": team2,
-                "odds": odds,
-                "match_url": url
-            })
-
-        except Exception as e:
-            log.warning(f"Skipping match due to error: {e}")
-
-        browser.close()
-
+    log.info(f"[+] Total matches scraped: {len(matches)}")
     return matches

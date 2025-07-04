@@ -1,3 +1,9 @@
+# core/main.py
+
+from utils.user_agent_pool import get_random_user_agent
+from utils.proxy_pool import get_random_proxy
+from core.utils import get_logger
+from core.fetch_matches import fetch_matches
 import os
 import sys
 import json
@@ -7,12 +13,8 @@ from datetime import datetime
 # Fix path to allow cross-module imports
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
-from core.fetch_matches import fetch_matches
-from core.utils import get_logger
-from utils.proxy_pool import get_random_proxy
-from utils.user_agent_pool import get_random_user_agent
-
 logger = get_logger()
+
 
 def save_results(matches):
     os.makedirs("output", exist_ok=True)
@@ -25,6 +27,7 @@ def save_results(matches):
     flat = []
     for match in matches:
         flat.append({
+            "sport": match.get("sport", ""),
             "team1": match.get("team1", ""),
             "team2": match.get("team2", ""),
             "odds": json.dumps(match.get("odds", {}), ensure_ascii=False),
@@ -32,6 +35,7 @@ def save_results(matches):
         })
     df = pd.DataFrame(flat)
     df.to_csv("output/results.csv", index=False)
+
 
 def main():
     logger.info("[*] Starting OddsPortal Scraper...")
@@ -46,6 +50,7 @@ def main():
 
     save_results(matches)
     logger.info("[✔] Scraping complete. Data saved to /output/")
+
 
 if __name__ == "__main__":
     main()
