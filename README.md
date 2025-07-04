@@ -1,4 +1,4 @@
-# ZNS OddsPortal Scraper
+# HQ OddsPortal Scraper
 
 A custom Python-based headless scraping solution for extracting betting odds from OddsPortal.com. 
 
