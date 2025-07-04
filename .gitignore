@@ -1,0 +1,17 @@
+# Python junk
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+
+# Virtual env
+venv/
+.env/
+
+# Output files
+output/*.csv
+output/*.json
+
+# VSCode
+.vscode/

@@ -1,0 +1,4 @@
+playwright
+pandas
+httpx
+fake-useragent
