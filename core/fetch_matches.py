@@ -1,76 +1,53 @@
 # core/fetch_matches.py
 
+from playwright.sync_api import sync_playwright
 from core.utils import get_logger
-from playwright.sync_api import sync_playwright, TimeoutError
 import time
 
 log = get_logger()
 
-def fetch_upcoming_matches(proxy=None, user_agent=None):
+def fetch_matches(proxy=None, user_agent=None) -> list[dict]:
+    matches = []
+    url = "https://www.oddsportal.com/football/lithuania/a-lyga/zalgiris-banga-hQke26Bj/inplay-odds/"
+
     with sync_playwright() as p:
-        browser = p.chromium.launch(headless=False, args=[
-    "--disable-blink-features=AutomationControlled",
-    "--start-maximized",
-])
-        context_args = {
-            "viewport": {"width": 1920, "height": 1080}
-        }
-
-        if user_agent:
-            context_args["user_agent"] = user_agent
-        if proxy:
-            context_args["proxy"] = {"server": proxy}
-
-        context = browser.new_context(**context_args)
+        browser = p.firefox.launch(headless=True)
+        context = browser.new_context(user_agent=user_agent)
         page = context.new_page()
 
-        matches = fetch_matches(page)
-
-        browser.close()
-        return matches
-
-
-def fetch_matches(page) -> list[dict]:
-    url = "https://www.oddsportal.com/inplay/"
-    log.info(f"Fetching Live Soccer from {url}")
-    
-    try:
-        page.goto(url, timeout=60000)
-        time.sleep(5)  # Let JS load everything
-        page.wait_for_selector(".eventRow", timeout=20000)
-        rows = page.query_selector_all(".eventRow")
-    except TimeoutError as te:
-        log.error(f"[!] Timeout while loading page or selectors: {te}")
-        return []
-    except Exception as e:
-        log.error(f"[!] Failed to load inplay page: {e}")
-        return []
-
-    matches = []
-
-    for row in rows:
         try:
-            link_el = row.query_selector('a[href*="/inplay-odds"]')
-            team_els = row.query_selector_all('[data-testid="event-participants"] a')
+            log.info(f"[*] Visiting match odds page: {url}")
+            page.goto(url, timeout=60000)
 
-            if not link_el or len(team_els) != 2:
-                continue
+            # Force wait for content to load
+            time.sleep(5)
 
-            link = link_el.get_attribute("href")
-            team1 = team_els[0].get_attribute("title")
-            team2 = team_els[1].get_attribute("title")
+            # Try extracting team names from the H1
+            title = page.locator("h1").first.inner_text().strip()
+            if " - " not in title:
+                raise Exception("Match title not in expected format.")
+            team1, team2 = [x.strip() for x in title.split(" - ")]
 
-            odds_els = row.query_selector_all('[data-testid="odd-container-default"]')
-            odds = [el.inner_text() for el in odds_els if el.inner_text()]
+            # Now get odds — change selector if needed
+            odds_elements = page.locator("[data-odd-name]")
+            count = odds_elements.count()
+            odds = []
+
+            for i in range(count):
+                text = odds_elements.nth(i).inner_text().strip()
+                if text:
+                    odds.append(text)
 
             matches.append({
-                "url": f"https://www.oddsportal.com{link}",
-                "teams": f"{team1} vs {team2}",
-                "odds": odds
+                "team1": team1,
+                "team2": team2,
+                "odds": odds,
+                "match_url": url
             })
 
         except Exception as e:
-            log.warning(f"Skipping row due to error: {e}")
+            log.warning(f"Skipping match due to error: {e}")
 
-    log.info(f"[+] Live Soccer: {len(matches)} matches scraped")
+        browser.close()
+
     return matches
