@@ -1,81 +1,76 @@
 # core/fetch_matches.py
 
-from playwright.sync_api import sync_playwright
-from datetime import datetime, timedelta
+from core.utils import get_logger
+from playwright.sync_api import sync_playwright, TimeoutError
 import time
 
-# Define sports and their OddsPortal slugs
-SPORTS = {
-    "NBA": "basketball/usa/nba",
-    "WNBA": "basketball/usa/wnba",
-    "MLB": "baseball/usa/mlb",
-    "NHL": "hockey/usa/nhl",
-    "Soccer": "soccer",
-    "NFL": "american-football/usa/nfl",
-    "NCAA Football": "american-football/usa/ncaa"
-}
-
-BASE_URL = "https://www.oddsportal.com"
+log = get_logger()
 
 def fetch_upcoming_matches(proxy=None, user_agent=None):
-    matches = []
     with sync_playwright() as p:
-        browser = p.chromium.launch(headless=True)
-        context = browser.new_context(
-            user_agent=user_agent,
-            proxy={"server": proxy} if proxy else None,
-            viewport={"width": 1280, "height": 800}
-        )
+        browser = p.chromium.launch(headless=False, args=[
+    "--disable-blink-features=AutomationControlled",
+    "--start-maximized",
+])
+        context_args = {
+            "viewport": {"width": 1920, "height": 1080}
+        }
+
+        if user_agent:
+            context_args["user_agent"] = user_agent
+        if proxy:
+            context_args["proxy"] = {"server": proxy}
+
+        context = browser.new_context(**context_args)
         page = context.new_page()
 
-        for sport, path in SPORTS.items():
-            url = f"{BASE_URL}/{path}/"
-            print(f"[*] Fetching {sport} from {url}")
-            try:
-                page.goto(url, timeout=30000)
-                page.wait_for_timeout(3000)
-
-                rows = page.query_selector_all("table#tournamentTable tbody tr")
-                for row in rows:
-                    try:
-                        if "deactivate" in row.get_attribute("class", ""):
-                            continue
-
-                        time_str = row.query_selector("td.time").inner_text().strip()
-                        team_str = row.query_selector("td.name a").inner_text().strip()
-                        match_url = BASE_URL + row.query_selector("td.name a").get_attribute("href")
-
-                        match_time = parse_match_time(time_str)
-                        if not match_time or not is_within_24_hours(match_time):
-                            continue
-
-                        matches.append({
-                            "sport": sport,
-                            "teams": team_str,
-                            "date_time": match_time.isoformat(),
-                            "url": match_url
-                        })
-                    except Exception:
-                        continue
-                print(f"[+] {sport}: {len(matches)} matches so far...")
-                time.sleep(2)
-            except Exception as e:
-                print(f"[!] Failed to fetch {sport}: {str(e)}")
+        matches = fetch_matches(page)
 
         browser.close()
-    return matches
+        return matches
 
-def parse_match_time(time_str):
+
+def fetch_matches(page) -> list[dict]:
+    url = "https://www.oddsportal.com/inplay/"
+    log.info(f"Fetching Live Soccer from {url}")
+    
     try:
-        today = datetime.utcnow()
-        dt = datetime.strptime(time_str, "%H:%M")
-        combined = today.replace(hour=dt.hour, minute=dt.minute, second=0, microsecond=0)
-        if combined < today:
-            combined += timedelta(days=1)
-        return combined
-    except:
-        return None
+        page.goto(url, timeout=60000)
+        time.sleep(5)  # Let JS load everything
+        page.wait_for_selector(".eventRow", timeout=20000)
+        rows = page.query_selector_all(".eventRow")
+    except TimeoutError as te:
+        log.error(f"[!] Timeout while loading page or selectors: {te}")
+        return []
+    except Exception as e:
+        log.error(f"[!] Failed to load inplay page: {e}")
+        return []
 
-def is_within_24_hours(dt):
-    now = datetime.utcnow()
-    return now <= dt <= now + timedelta(hours=24)
+    matches = []
+
+    for row in rows:
+        try:
+            link_el = row.query_selector('a[href*="/inplay-odds"]')
+            team_els = row.query_selector_all('[data-testid="event-participants"] a')
+
+            if not link_el or len(team_els) != 2:
+                continue
+
+            link = link_el.get_attribute("href")
+            team1 = team_els[0].get_attribute("title")
+            team2 = team_els[1].get_attribute("title")
+
+            odds_els = row.query_selector_all('[data-testid="odd-container-default"]')
+            odds = [el.inner_text() for el in odds_els if el.inner_text()]
+
+            matches.append({
+                "url": f"https://www.oddsportal.com{link}",
+                "teams": f"{team1} vs {team2}",
+                "odds": odds
+            })
+
+        except Exception as e:
+            log.warning(f"Skipping row due to error: {e}")
+
+    log.info(f"[+] Live Soccer: {len(matches)} matches scraped")
+    return matches
