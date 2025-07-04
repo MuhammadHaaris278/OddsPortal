@@ -29,6 +29,10 @@ Explain stealth mechanisms: headers, proxies, delays.
 ## 📦 Output Format
 Show sample table structure for CSV/JSON export.
 
-## 👨‍💻 Author
-Muhammad Bilal Qureshi- Developer
-Muhammad Haaris-Developer
+
+## 👨‍💻 Authors
+
+List of contributors with roles and links:
+- **Muhammad Haaris** — Developer
+- **Muhammad Bilal** — Developer 
+
