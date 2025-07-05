@@ -24,7 +24,6 @@ def get_rotating_proxy_and_headers():
         "http://80.78.73.211:3128",
     ]
 
-    # List of random user-agents
     user_agents = [
         "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36",
         "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36",
@@ -32,7 +31,6 @@ def get_rotating_proxy_and_headers():
         "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_14_6) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/90.0.4430.212 Safari/537.36",
     ]
 
-    # Randomly pick a proxy and user-agent
     proxy = random.choice(proxies)
     user_agent = random.choice(user_agents)
 
@@ -42,7 +40,6 @@ def get_rotating_proxy_and_headers():
 def save_results(matches):
     os.makedirs("output", exist_ok=True)
 
-    # Save CSV
     flat = []
     for match in matches:
         flat.append({
@@ -53,13 +50,11 @@ def save_results(matches):
             "match_url": match.get("match_url", "")
         })
     df = pd.DataFrame(flat)
-    # Saving logic for CSV is already there
 
 
 def main():
     logger.info("[*] Starting OddsPortal Scraper...")
 
-    # Get the rotating proxy and user-agent
     proxy, ua = get_rotating_proxy_and_headers()
     logger.info(f"[*] Using proxy: {proxy}")
     logger.info(f"[*] Using UA: {ua}")
