@@ -3,6 +3,7 @@
 from playwright.sync_api import sync_playwright
 import time
 
+
 def extract_markets(match_url, proxy=None, user_agent=None):
     result_market = None
     result_odds = {}
@@ -21,7 +22,8 @@ def extract_markets(match_url, proxy=None, user_agent=None):
 
             # Click "Show more markets" if it exists
             try:
-                more_button = page.query_selector("button:has-text('Show more')")
+                more_button = page.query_selector(
+                    "button:has-text('Show more')")
                 if more_button:
                     more_button.click()
                     page.wait_for_timeout(1000)
@@ -44,7 +46,8 @@ def extract_markets(match_url, proxy=None, user_agent=None):
                     result_odds["Draw No Bet"] = extract_odds_from_table(table)
 
                 elif "double chance" in market_name:
-                    result_odds["Double Chance"] = extract_odds_from_table(table)
+                    result_odds["Double Chance"] = extract_odds_from_table(
+                        table)
 
                 elif "spread" in market_name or "handicap" in market_name:
                     result_odds["Spread"] = extract_odds_from_table(table)
@@ -55,6 +58,7 @@ def extract_markets(match_url, proxy=None, user_agent=None):
         print(f"[!] Failed to extract odds: {str(e)}")
 
     return result_market, result_odds
+
 
 def extract_odds_from_table(table):
     try:
