@@ -23,7 +23,7 @@ def fetch_matches(proxy=None, user_agent=None) -> list[dict]:
             # Read the CSV file (make sure to adjust the path if needed)
             # Full path to CSV file
             df = pd.read_csv(
-                'C:/Users/muham/OneDrive/Desktop/New folder/OddsPortal-scraper/oddsportal.csv')
+                'format\oddsportal.csv')
 
             # Extract relevant columns
             for index, row in df.iterrows():
